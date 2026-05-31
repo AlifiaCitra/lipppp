@@ -1,107 +1,138 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Konfigurasi Halaman (Wajib Paling Atas)
-st.set_page_config(page_title="ChemGrid - Visual Lab", page_icon="🗂️", layout="wide")
+# 1. Konfigurasi Halaman
+st.set_page_config(page_title="ChemDex - Arsip Organik", page_icon="📑", layout="wide")
 
 # =========================
-# CUSTOM CSS (Untuk membuat tampilan seperti aplikasi di foto)
+# CUSTOM CSS: Konsep Buku Jurnal / Smart Dossier
 # =========================
 st.markdown("""
 <style>
-/* Background Web */
+/* Background warna pastel lembut */
 [data-testid="stAppViewContainer"] {
-    background-color: #f0f4f8;
+    background-color: #f8fafc;
 }
 
-/* Modifikasi Tombol di Grid agar terlihat seperti kotak elemen */
-div[data-testid="stButton"] button {
-    width: 100%;
-    height: 80px;
-    border-radius: 12px;
-    background: white;
-    border: 2px solid #e2e8f0;
-    color: #1e293b;
-    font-weight: 800;
-    font-size: 16px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    transition: all 0.3s ease-in-out;
+/* Modifikasi garis batas kolom biar kaya pembatas buku */
+[data-testid="column"] {
+    padding: 15px;
 }
 
-/* Efek saat kotak di-hover (disentuh mouse) */
-div[data-testid="stButton"] button:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(59, 130, 246, 0.2);
-}
-
-/* Kartu Detail di bagian bawah */
-.detail-card {
-    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-    padding: 30px;
+/* Kotak Laporan Utama (Kanan) */
+.report-card {
+    background-color: white;
     border-radius: 20px;
-    border-left: 8px solid #3b82f6;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-    margin-top: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border-top: 6px solid #2563eb;
+}
+
+/* Label/Badge untuk Gugus Fungsi */
+.badge {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+/* Kotak info khusus untuk visual hasil */
+.visual-box {
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    font-size: 20px;
+    font-weight: bold;
+    color: #1f2937;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# 2. Database Senyawa / Uji (Bisa diganti sesuai topik yang kamu mau)
-data_uji = [
-    {"ID": "AL", "Nama": "Uji Tollens", "Gugus": "Aldehida", "Visual": "🪞 Cermin Perak", "Reagen": "AgNO3 + NH4OH", "Sifat": "Oksidasi ringan membentuk endapan logam perak."},
-    {"ID": "FE", "Nama": "Uji Fehling", "Gugus": "Aldehida", "Visual": "🔴 Merah Bata", "Reagen": "CuSO4 + Tartrat", "Sifat": "Mereduksi ion Cu2+ menjadi endapan Cu2O pada suhu tinggi."},
-    {"ID": "FN", "Nama": "Uji FeCl3", "Gugus": "Fenol", "Visual": "🟣 Ungu Pekat", "Reagen": "Besi(III) Klorida 1%", "Sifat": "Pembentukan kompleks besi-fenolat yang pekat."},
-    {"ID": "LC", "Nama": "Uji Lucas", "Gugus": "Alkohol", "Visual": "⚪ Kekeruhan", "Reagen": "HCl pekat + ZnCl2", "Sifat": "Substitusi gugus -OH menjadi alkil klorida yang tak larut."},
-    {"ID": "BY", "Nama": "Uji Baeyer", "Gugus": "Alkena", "Visual": "🟤 Endapan Coklat", "Reagen": "KMnO4 1%", "Sifat": "Oksidasi ikatan rangkap, warna ungu KMnO4 memudar."},
-    {"ID": "BD", "Nama": "Uji Benedict", "Gugus": "Gula Pereduksi", "Visual": "🟠 Merah Bata", "Reagen": "Tembaga(II) Sitrat", "Sifat": "Oksidasi gula membentuk endapan Cu2O."},
-    {"ID": "NB", "Nama": "Uji NaHCO3", "Gugus": "Asam Karboksilat", "Visual": "🫧 Gelembung Gas", "Reagen": "Natrium Bikarbonat 5%", "Sifat": "Reaksi asam basa menghasilkan gas Karbon Dioksida."},
-    {"ID": "SF", "Nama": "Uji Schiff", "Gugus": "Aldehida", "Visual": "💗 Magenta", "Reagen": "Fuchsin + SO2", "Sifat": "Mengembalikan warna pink/magenta dari zat warna fuchsin."}
-]
+# 2. Database Uji Kualitatif
+data_uji = {
+    "Uji Tollens (Cermin Perak)": {
+        "Gugus": "Aldehida", 
+        "Reagen": "AgNO3 + NaOH + NH4OH",
+        "Prosedur": "Tambahkan sampel ke reagen Tollens, panaskan perlahan di penangas air.",
+        "Hasil": "Terbentuk endapan logam perak murni yang menempel di dinding kaca tabung reaksi.",
+        "Visual": "🪞 Terbentuk Cermin Perak",
+        "Warna": "#f8fafc"
+    },
+    "Uji FeCl3 (Besi Klorida)": {
+        "Gugus": "Fenol", 
+        "Reagen": "Larutan Besi(III) Klorida 1%",
+        "Prosedur": "Larutkan sampel fenol dalam air murni, teteskan reagen FeCl3.",
+        "Hasil": "Terjadi perubahan warna instan karena terbentuknya ion kompleks besi-fenolat.",
+        "Visual": "🟣 Warna Ungu / Hijau Pekat",
+        "Warna": "#faf5ff"
+    },
+    "Uji Baeyer (Oksidasi)": {
+        "Gugus": "Alkena / Alkuna", 
+        "Reagen": "Larutan KMnO4 1% netral",
+        "Prosedur": "Teteskan kalium permanganat ke dalam larutan sampel sambil dikocok.",
+        "Hasil": "Ion permanganat tereduksi menjadi mangan dioksida (MnO2) yang mengendap.",
+        "Visual": "🟤 Warna Ungu Hilang & Endapan Coklat",
+        "Warna": "#fdf8f6"
+    },
+    "Uji Lucas (Substitusi)": {
+        "Gugus": "Alkohol Tersier/Sekunder", 
+        "Reagen": "HCl pekat + Seng Klorida (ZnCl2)",
+        "Prosedur": "Campurkan sampel dengan reagen pada suhu ruang, amati waktunya.",
+        "Hasil": "Gugus -OH digantikan oleh Cl, membentuk alkil klorida yang tidak larut air.",
+        "Visual": "⚪ Kekeruhan Terjadi (Fasa Terpisah)",
+        "Warna": "#f0fdf4"
+    }
+}
 
-# 3. Memory Streamlit (Session State)
-# Berfungsi untuk mengingat kotak mana yang sedang diklik user
-if "terpilih" not in st.session_state:
-    st.session_state.terpilih = data_uji[0] # Default yang tampil pertama kali
-
-# 4. TAMPILAN HEADER
-st.title("🗂️ Grid Visual: Uji Kualitatif Organik")
-st.write("Klik salah satu kotak uji di bawah ini untuk melihat detail lengkapnya!")
+# 3. HEADER APLIKASI
+st.title("📑 ChemDex: Jurnal Kualitatif Organik")
+st.write("Ensiklopedia digital untuk analisis gugus fungsi kimia.")
 st.divider()
 
-# 5. MEMBUAT GRID KOTAK-KOTAK (Seperti Tabel Periodik di foto)
-# Kita buat 4 kolom per baris
-kolom_per_baris = 4
-for i in range(0, len(data_uji), kolom_per_baris):
-    cols = st.columns(kolom_per_baris)
-    for j in range(kolom_per_baris):
-        if i + j < len(data_uji):
-            item = data_uji[i + j]
-            # Jika tombol diklik, simpan datanya ke memory "terpilih"
-            if cols[j].button(f"{item['ID']}\n\n{item['Nama']}", key=f"btn_{item['ID']}"):
-                st.session_state.terpilih = item
+# 4. MEMBUAT LAYOUT 2 KOLOM (Kiri untuk Menu, Kanan untuk Laporan)
+col_menu, col_laporan = st.columns([1, 2.5])
 
-st.divider()
+# BAGIAN KIRI: Menu Navigasi Sederhana
+with col_menu:
+    st.subheader("📋 Daftar Analisis")
+    # Menggunakan radio button agar tampilannya berupa list vertikal (bukan kotak)
+    pilihan = st.radio(
+        "Pilih jenis uji yang ingin dilihat:",
+        list(data_uji.keys()),
+        label_visibility="collapsed"
+    )
 
-# 6. KARTU DETAIL (Muncul di bawah, sesuai kotak yang diklik)
-terpilih = st.session_state.terpilih
-
-st.markdown(f"""
-<div class="detail-card">
-    <h1 style="color: #0f172a; margin-bottom: 0px;">{terpilih['Visual']} {terpilih['Nama']}</h1>
-    <p style="color: #64748b; font-size: 18px; margin-top: 0px;">Target Analisis: <b>{terpilih['Gugus']}</b></p>
-    <hr style="border: 1px solid #e2e8f0;">
+# BAGIAN KANAN: Lembar Laporan Digital
+with col_laporan:
+    # Mengambil data berdasarkan pilihan di sebelah kiri
+    item = data_uji[pilihan]
     
-    <div style="display: flex; justify-content: space-between; margin-top: 20px;">
-        <div style="width: 48%;">
-            <h4 style="color: #3b82f6;">🧪 Reagen yang Digunakan</h4>
-            <p style="font-size: 16px; background: #e0f2fe; padding: 10px; border-radius: 8px;">{terpilih['Reagen']}</p>
-        </div>
-        <div style="width: 48%;">
-            <h4 style="color: #3b82f6;">⚙️ Sifat & Mekanisme Kimia</h4>
-            <p style="font-size: 16px; background: #e0f2fe; padding: 10px; border-radius: 8px;">{terpilih['Sifat']}</p>
+    st.markdown(f"""
+    <div class="report-card">
+        <span class="badge">Target Analisis: {item['Gugus']}</span>
+        <h1 style="color: #1e293b; margin-top: 0px;">{pilihan}</h1>
+        <hr style="border: 1px solid #f1f5f9; margin-bottom: 30px;">
+        
+        <h4 style="color: #2563eb;">🧪 Komposisi Reagen</h4>
+        <p style="font-size: 16px; color: #475569;">{item['Reagen']}</p>
+        
+        <br>
+        
+        <h4 style="color: #2563eb;">⚙️ Prosedur & Mekanisme Reaksi</h4>
+        <p style="font-size: 16px; color: #475569;"><b>Cara Kerja:</b> {item['Prosedur']}</p>
+        <p style="font-size: 16px; color: #475569;"><b>Analisis:</b> {item['Hasil']}</p>
+        
+        <br><br>
+        
+        <h4 style="color: #2563eb; text-align: center;">👁️ Visualisasi Hasil Positif</h4>
+        <div class="visual-box">
+            {item['Visual']}
         </div>
     </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)

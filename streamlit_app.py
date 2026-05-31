@@ -1,10 +1,14 @@
 import streamlit as st
 import time
 
-# 1. Konfigurasi Halaman
-st.set_page_config(page_title="ChemSim - Simulator Tabung", page_icon="🧪", layout="wide")
+# 1. Konfigurasi Halaman (Harus di bagian paling atas)
+st.set_page_config(
+    page_title="ChemSim - Simulator Tabung", 
+    page_icon="🧪", 
+    layout="wide"
+)
 
-# Custom CSS untuk mempercantik UI & Tombol Samping
+# Custom CSS untuk mempercantik tampilan slider dan box reaksi
 st.markdown("""
 <style>
     [data-testid="stAppViewContainer"] { background-color: #f8fafc; }
@@ -18,97 +22,102 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🧪 Virtual Beaker Simulator Game")
-st.write("Campurkan zat kimia, atur suhunya, dan lihat perubahan visualnya secara langsung!")
+st.write("Campurkan zat kimia, atur suhu, dan lihat perubahan visualnya!")
 st.divider()
 
-# 2. SELEKSI BAHAN (Dibuat mirip menu kategori di game)
+# 2. PANEL INPUT & KONTROL
 col_input, col_visual = st.columns([1, 1.2])
 
 with col_input:
     st.subheader("📋 Panel Kontrol Laboratorium")
     
-    # Pilih Sampel Organik
-    sampel = st.selectbox("1. Pilih Sampel Utama:", ["-- Kosong --", "Formaldehida (Aldehida)", "Fenol", "Minyak Goreng (Ester)"])
+    sampel = st.selectbox(
+        "1. Pilih Sampel Utama:", 
+        ["-- Kosong --", "Formaldehida (Aldehida)", "Fenol", "Minyak Goreng (Ester)"]
+    )
     
-    # Pilih Pereaksi
-    reagen = st.selectbox("2. Tambahkan Pereaksi (Reagen):", ["-- Tanpa Reagen --", "Pereaksi Tollens", "Larutan FeCl3", "NaOH + Pemanasan"])
+    reagen = st.selectbox(
+        "2. Tambahkan Pereaksi (Reagen):", 
+        ["-- Tanpa Reagen --", "Pereaksi Tollens", "Larutan FeCl3", "NaOH + Pemanasan"]
+    )
     
-    # Slider Suhu (Mirip indikator termometer di game)
-    suhu = st.slider("3. Atur Suhu Sistem (°C):", min_value=25, max_value=100, value=25, step=5)
+    suhu = st.slider(
+        "3. Atur Suhu Sistem (°C):", 
+        min_value=25, max_value=100, value=25, step=5
+    )
     
     st.write("")
     jalankan = st.button("🧪 REAKSIKAN SEKARANG", use_container_width=True)
 
-# 3. LOGIKA SIMULATOR (Menentukan Perubahan Warna & Rumus)
-warna_cairan = "#e2e8f0"  # Default: Bening/Abu-abu kosong
-tinggi_cairan = "30%"    # Kosong isi dikit
+# 3. LOGIKA AKSI SIMULATOR (Penentu warna & rumus)
+warna_cairan = "#e2e8f0"  
+tinggi_cairan = "30%"    
 status_reaksi = "Belum ada zat yang dicampur."
 rumus_kimia = "Menunggu Reaksi..."
 efek_asap = ""
 
 if sampel != "-- Kosong --":
-    warna_cairan = "#f1f5f9" # Ada sampel = cairan bening jernih
+    warna_cairan = "#f1f5f9" 
     tinggi_cairan = "50%"
-    status_reaksi = f"Sampel {sampel} telah dimasukkan ke dalam gelas kimia."
+    status_reaksi = f"Sampel {sampel} dimasukkan ke dalam gelas kimia."
     
     if reagen != "-- Tanpa Reagen --":
         tinggi_cairan = "75%"
         
-        # KONDISI 1: UJI TOLLENS (Harus Aldehida + Tollens + Panas)
+        # Kondisi 1: Uji Tollens
         if "Aldehida" in sampel and reagen == "Pereaksi Tollens":
             if suhu >= 70:
-                warna_cairan = "linear-gradient(to right, #94a3b8, #cbd5e1, #94a3b8)" # Efek Cermin Perak mengkilap
-                status_reaksi = "💥 REAKSI POSITIF! Terbentuk lapisan cermin perak di dinding gelas kimia!"
+                warna_cairan = "linear-gradient(to right, #94a3b8, #cbd5e1, #94a3b8)"
+                status_reaksi = "💥 POSITIF! Terbentuk cermin perak di dinding gelas!"
                 rumus_kimia = "R-CHO + 2[Ag(NH3)2]+ + 3OH- -> R-COO- + 2Ag(s) + 4NH3 + 2H2O"
                 if suhu >= 90:
                     efek_asap = "💨"
             else:
-                warna_cairan = "#cbd5e1" # Keruh biasa kalau belum panas
-                status_reaksi = "Campuran Tollens dingin. Butuh suhu tinggi (≥70°C) untuk mereduksi ion perak!"
+                warna_cairan = "#cbd5e1"
+                status_reaksi = "Campuran Tollens dingin. Butuh suhu tinggi (>=70C)!"
                 rumus_kimia = "R-CHO + 2[Ag(NH3)2]+"
                 
-        # KONDISI 2: UJI FENOL + FeCl3 (Instan berubah warna tanpa pemanasan)
+        # Kondisi 2: Uji Fenol + FeCl3
         elif "Fenol" in sampel and reagen == "Larutan FeCl3":
-            warna_cairan = "#4c1d95" # Ungu pekat kompleks besi
-            status_reaksi = "💥 REAKSI POSITIF! Terbentuk senyawa kompleks besi(III) fenolat berwarna ungu pekat!"
+            warna_cairan = "#4c1d95"
+            status_reaksi = "💥 POSITIF! Terbentuk kompleks besi berwarna ungu pekat!"
             rumus_kimia = "6Ar-OH + Fe3+ -> [Fe(OAr)6]3- + 6H+"
             if suhu >= 80:
                 efek_asap = "💨"
                 
-        # KONDISI 3: SAPONIFIKASI ESTER (Ester + NaOH + Panas)
+        # Kondisi 3: Saponifikasi Ester
         elif "Ester" in sampel and reagen == "NaOH + Pemanasan":
             if suhu >= 60:
-                warna_cairan = "#fef08a" # Kuning keruh sabun/emulsi
-                status_reaksi = "💥 REAKSI POSITIF! Hidrolisis ester (saponifikasi) berhasil membentuk sabun dan gliserol!"
+                warna_cairan = "#fef08a"
+                status_reaksi = "💥 POSITIF! Hidrolisis berhasil membentuk sabun!"
                 rumus_kimia = "R-COOR' + NaOH -> R-COONa + R'-OH"
                 efek_asap = "🧼"
             else:
-                warna_cairan = "#fef9c3" # Minyak mengapung biasa
-                status_reaksi = "Campuran belum menyatu sempurna. Naikkan suhu untuk mempercepat hidrolisis!"
+                warna_cairan = "#fef9c3"
+                status_reaksi = "Belum menyatu. Naikkan suhu untuk hidrolisis!"
                 rumus_kimia = "R-COOR' + NaOH"
         
-        # KONDISI NEGATIF (Zat tidak cocok)
+        # Kondisi Jika Tidak Cocok
         else:
-            warna_cairan = "#fca5a5" # Berubah warna merah/oranye tanda tidak bereaksi
-            status_reaksi = "❌ REAKSI NEGATIF! Reagen tidak cocok dengan gugus fungsi sampel tersebut."
+            warna_cairan = "#fca5a5"
+            status_reaksi = "❌ NEGATIF! Reagen tidak cocok dengan sampel."
             rumus_kimia = "Tidak terjadi reaksi (No Reaction)"
 
-# 4. TAMPILAN VISUAL GELAS KIMIA (Di sebelah kanan)
+# 4. MONITOR VISUALISASI GELAS KIMIA (KANAN)
 with col_visual:
     st.subheader("🖥️ Monitor Beaker Virtual")
     
-    # Kotak Rumus Kimia Atas (Persis seperti di game HP kamu)
+    # Render box rumus kimia atas
     st.markdown(f'<div class="equation-box">REACTION: {rumus_kimia}</div>', unsafe_allow_html=True)
     
-    # Animasi Proses Sebentar saat tombol ditekan
     if jalankan:
         with st.spinner("Mereaksikan zat..."):
-            time.sleep(1)
+            time.sleep(0.5)
             
-    # Grafis Gelas Kimia pakai HTML asli bawaan Streamlit
+    # Grafis Gelas Kimia HTML (Sudah ditambahkan unsafe_allow_html=True di bawah)
     st.markdown(f"""
     <div style="text-align: center; margin-top: 20px; position: relative;">
-        <div style="font-size: 40px; height: 50px; margin-bottom: -10px; animation: pulse 1s infinite;">
+        <div style="font-size: 40px; height: 50px; margin-bottom: -10px;">
             {efek_asap if suhu >= 60 else ""}
         </div>
         
@@ -122,8 +131,8 @@ with col_visual:
             <div style="background: {warna_cairan}; width: 100%; height: {tinggi_cairan}; 
                         position: absolute; bottom: 0; border-radius: 0 0 25px 25px; 
                         transition: all 0.8s ease-in-out; display: flex; align-items: center; justify-content: center;">
-                <span style="color: #1e293b; font-size: 12px; font-weight: bold; opacity: 0.4;">
-                    {f"{suhu}°C" if sampel != "-- Kosong--" else ""}
+                <span style="color: #1e293b; font-size: 14px; font-weight: bold; opacity: 0.5;">
+                    {f"{suhu}°C" if sampel != "-- Kosong --" else ""}
                 </span>
             </div>
             
@@ -136,9 +145,9 @@ with col_visual:
     </div>
     """, unsafe_allow_html=True)
     
-    # Keterangan Status Hasil di Bawah Gelas
+    # Kotak pesan status hasil
     st.write("")
-    if "POSITIF" in status_reaksi:
+    if "💥" in status_reaksi:
         st.success(status_reaksi)
     elif "❌" in status_reaksi:
         st.error(status_reaksi)

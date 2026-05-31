@@ -1,25 +1,44 @@
 import streamlit as st
 import pandas as pd
+
+# 1. Konfigurasi Halaman (Harus ditaruh paling atas)
+st.set_page_config(
+    page_title="ChemQual - Katalog Organik", 
+    page_icon="🧪", 
+    layout="wide"
+)
+
 # =========================
-# CUSTOM CSS
+# CUSTOM CSS UNTUK BACKGROUND GAMBAR
 # =========================
 st.markdown("""
 <style>
-/* Background utama */
-.stApp {
-    background:
-    radial-gradient(circle at top left, #dbeafe 0%, transparent 30%),
-    radial-gradient(circle at bottom right, #bfdbfe 0%, transparent 25%),
-    linear-gradient(to bottom right, #f8fbff, #eef6ff);
+/* 1. Background utama menggunakan gambar Lab Kimia */
+[data-testid="stAppViewContainer"] {
+    background-image: url("https://images.unsplash.com/photo-1532094349884-543bc11b234d?q=80&w=2070&auto=format&fit=crop");
+    background-size: cover;
+    background-position: center;
     background-attachment: fixed;
 }
-/* Container utama */
+
+/* 2. Bikin header Streamlit (garis atas) transparan */
+[data-testid="stHeader"] {
+    background-color: transparent;
+}
+
+/* 3. Container utama dibuat seperti kaca (Glassmorphism) agar tulisan tetap terbaca */
 .block-container {
-    padding-top: 1.5rem;
-    padding-bottom: 1rem;
-    padding-left: 2rem;
-    padding-right: 2rem;
+    background: rgba(255, 255, 255, 0.90); /* Putih transparan */
+    backdrop-filter: blur(10px); /* Efek blur kaca */
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    padding-left: 3rem;
+    padding-right: 3rem;
+    border-radius: 20px;
     max-width: 1200px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* Judul */
@@ -30,18 +49,11 @@ h1, h2, h3 {
 
 /* Expander/card */
 [data-testid="stExpander"] {
-    border-radius: 18px;
+    border-radius: 15px;
     border: 1px solid #d6e4f0;
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.95);
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     margin-bottom: 10px;
-}
-
-/* Isi expander */
-.streamlit-expanderContent {
-    background-color: rgba(255,255,255,0.6);
-    border-radius: 12px;
 }
 
 /* Input box */
@@ -49,11 +61,6 @@ h1, h2, h3 {
 .stSelectbox div[data-baseweb="select"] {
     border-radius: 12px;
     border: 1px solid #cbd5e1;
-}
-
-/* Tombol & alert */
-.stAlert {
-    border-radius: 14px;
 }
 
 /* Divider */
@@ -65,24 +72,12 @@ hr {
 
 /* Dataframe */
 [data-testid="stDataFrame"] {
+    background: white;
     border-radius: 15px;
     overflow: hidden;
 }
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(to bottom, #dbeafe, #eff6ff);
-    border-right: 1px solid #cbd5e1;
-}
-
 </style>
 """, unsafe_allow_html=True)
-# 1. Konfigurasi Halaman & Tema Sederhana
-st.set_page_config(
-    page_title="ChemQual - Katalog Organik", 
-    page_icon="🧪", 
-    layout="wide"
-)
 
 # 2. Database Uji Kualitatif Organik
 data_uji = [
@@ -140,42 +135,42 @@ data_uji = [
         "Warna/Visual": "🟤 Warna Ungu Hilang & Endapan Coklat",
         "Reaksi Kimia": "3R-CH=CH-R + 2KMnO4 + 4H2O --> 3R-CH(OH)-CH(OH)-R + 2MnO2 (s) + 2KOH"
     },
-{
-    "Nama Uji": "Uji Benedict",
-    "Gugus Fungsi": "Gula Pereduksi / Aldehida",
-    "Reagen": "Larutan Benedict",
-    "Prosedur Singkat": "Tambahkan pereaksi Benedict ke sampel lalu panaskan beberapa menit.",
-    "Hasil Positif": "Larutan berubah dari biru menjadi hijau, kuning, jingga, hingga merah bata.",
-    "Warna/Visual": "🟠 Endapan Merah Bata",
-    "Reaksi Kimia": "R-CHO + Cu2+ + OH- --> R-COO- + Cu2O (s)"
-},
-{
-    "Nama Uji": "Uji Schiff",
-    "Gugus Fungsi": "Aldehida",
-    "Reagen": "Reagen Schiff",
-    "Prosedur Singkat": "Tambahkan reagen Schiff ke sampel.",
-    "Hasil Positif": "Muncul warna merah muda atau magenta.",
-    "Warna/Visual": "💗 Merah Muda / Magenta",
-    "Reaksi Kimia": "Aldehida + reagen Schiff --> kompleks berwarna"
-},
-{
-    "Nama Uji": "Uji Molisch",
-    "Gugus Fungsi": "Karbohidrat",
-    "Reagen": "α-naftol + H2SO4 pekat",
-    "Prosedur Singkat": "Tambahkan pereaksi Molisch lalu alirkan H2SO4 perlahan.",
-    "Hasil Positif": "Terbentuk cincin ungu pada batas larutan.",
-    "Warna/Visual": "🟣 Cincin Ungu",
-    "Reaksi Kimia": "Karbohidrat --> furfural --> kompleks ungu"
-},
-{
-    "Nama Uji": "Uji Saponifikasi",
-    "Gugus Fungsi": "Ester / Lemak",
-    "Reagen": "NaOH atau KOH",
-    "Prosedur Singkat": "Panaskan sampel dengan basa kuat.",
-    "Hasil Positif": "Terbentuk sabun atau emulsi.",
-    "Warna/Visual": "🫧 Emulsi / Sabun",
-    "Reaksi Kimia": "Ester + NaOH --> Alkohol + Garam Asam"
-}
+    {
+        "Nama Uji": "Uji Benedict",
+        "Gugus Fungsi": "Gula Pereduksi / Aldehida",
+        "Reagen": "Larutan Benedict",
+        "Prosedur Singkat": "Tambahkan pereaksi Benedict ke sampel lalu panaskan beberapa menit.",
+        "Hasil Positif": "Larutan berubah dari biru menjadi hijau, kuning, jingga, hingga merah bata.",
+        "Warna/Visual": "🟠 Endapan Merah Bata",
+        "Reaksi Kimia": "R-CHO + Cu2+ + OH- --> R-COO- + Cu2O (s)"
+    },
+    {
+        "Nama Uji": "Uji Schiff",
+        "Gugus Fungsi": "Aldehida",
+        "Reagen": "Reagen Schiff",
+        "Prosedur Singkat": "Tambahkan reagen Schiff ke sampel.",
+        "Hasil Positif": "Muncul warna merah muda atau magenta.",
+        "Warna/Visual": "💗 Merah Muda / Magenta",
+        "Reaksi Kimia": "Aldehida + reagen Schiff --> kompleks berwarna"
+    },
+    {
+        "Nama Uji": "Uji Molisch",
+        "Gugus Fungsi": "Karbohidrat",
+        "Reagen": "α-naftol + H2SO4 pekat",
+        "Prosedur Singkat": "Tambahkan pereaksi Molisch lalu alirkan H2SO4 perlahan.",
+        "Hasil Positif": "Terbentuk cincin ungu pada batas larutan.",
+        "Warna/Visual": "🟣 Cincin Ungu",
+        "Reaksi Kimia": "Karbohidrat --> furfural --> kompleks ungu"
+    },
+    {
+        "Nama Uji": "Uji Saponifikasi",
+        "Gugus Fungsi": "Ester / Lemak",
+        "Reagen": "NaOH atau KOH",
+        "Prosedur Singkat": "Panaskan sampel dengan basa kuat.",
+        "Hasil Positif": "Terbentuk sabun atau emulsi.",
+        "Warna/Visual": "🫧 Emulsi / Sabun",
+        "Reaksi Kimia": "Ester + NaOH --> Alkohol + Garam Asam"
+    }
 ]
 
 df = pd.DataFrame(data_uji)
@@ -192,11 +187,9 @@ tab1, tab2 = st.tabs(["🔍 Pencarian & Filter", "📚 Semua Daftar Uji"])
 with tab1:
     st.markdown("### Cari Berdasarkan Parameter")
     
-    # 1. BUAT VARIABEL KOSONG TERLEBIH DAHULU (Agar tidak NameError)
     search_gugus = "Semua Gugus"
     search_name = ""
     
-    # 2. MEMBUAT KOLOM TAMPILAN
     col1, col2 = st.columns(2)
     
     with col1:
@@ -208,7 +201,6 @@ with tab1:
     with col2:
         search_name = st.text_input("Atau ketik nama uji / reagen (contoh: Tollens, FeCl3):")
 
-    # 3. LOGIKA FILTER
     filtered_df = df.copy()
     
     if search_gugus != "Semua Gugus":
@@ -220,27 +212,9 @@ with tab1:
             filtered_df["Reagen"].str.contains(search_name, case=False)
         ]
 
-    # 4. MENAMPILKAN DATA
     if filtered_df.empty:
         st.warning("Uji kualitatif tidak ditemukan. Coba kata kunci lain!")
     else:
         for index, row in filtered_df.iterrows():
             with st.expander(f"🔹 {row['Nama Uji']} — Target: {row['Gugus Fungsi']}", expanded=True):
-                c1, c2 = st.columns([2, 1])
-                with c1:
-                    st.markdown(f"**🔬 Reagen:** {row['Reagen']}")
-                    st.markdown(f"**📝 Prosedur:** {row['Prosedur Singkat']}")
-                    st.markdown(f"**⚗️ Persamaan Reaksi:** `{row['Reaksi Kimia']}`")
-                with c2:
-                    st.info(f"**💡 Hasil Positif:**\n{row['Hasil Positif']}")
-                    st.success(f"**👁️ Pengamatan Visual:**\n{row['Warna/Visual']}")
-
-# TAB 2 - SEMUA DAFTAR UJI
-with tab2:
-    st.markdown("### 📚 Semua Daftar Uji")
-    st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True
-    )
-    st.caption("ChemQual dibuat untuk pembelajaran kimia organik.")
+                c1, c2 = st.

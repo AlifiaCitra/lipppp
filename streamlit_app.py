@@ -7,8 +7,8 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🧪 Virtual Beaker Simulator Game")
-st.write("Pilih sampel dan reagen di kiri, amati reaksi visual gelas kimia di kanan!")
+st.title("🧪 Virtual Beaker Simulator Game v2.0")
+st.write("Koleksi zat diperbanyak! Pilih kombinasi yang tepat untuk memicu reaksi.")
 st.divider()
 
 # 2. PANEL INPUT (Kiri)
@@ -19,12 +19,27 @@ with col_input:
     
     sampel = st.selectbox(
         "1. Pilih Sampel Utama:", 
-        ["-- Kosong --", "Formaldehida (Aldehida)", "Fenol", "Minyak Goreng (Ester)"]
+        [
+            "-- Kosong --", 
+            "Formaldehida (Aldehida)", 
+            "Aseton (Keton)",
+            "Glukosa (Gula Pereduksi)",
+            "Fenol", 
+            "Asam Asetat (Asam Karboksilat)",
+            "Minyak Goreng (Ester)"
+        ]
     )
     
     reagen = st.selectbox(
         "2. Tambahkan Pereaksi (Reagen):", 
-        ["-- Tanpa Reagen --", "Pereaksi Tollens", "Larutan FeCl3", "NaOH + Pemanasan"]
+        [
+            "-- Tanpa Reagen --", 
+            "Pereaksi Tollens", 
+            "Pereaksi Fehling",
+            "Larutan FeCl3", 
+            "Larutan NaHCO3 5%",
+            "NaOH + Pemanasan"
+        ]
     )
     
     suhu = st.slider(
@@ -32,79 +47,107 @@ with col_input:
         min_value=25, max_value=100, value=25, step=5
     )
 
-# 3. LOGIKA PENENTUAN WARNA & RUMUS KIMIA
-warna_cairan = "#e2e8f0"  # Default: kosong (abu-abu)
-tinggi_cairan = "80px"    # Sedikit isi
+# 3. LOGIKA GAME (WARNA, RUMUS, & STATUS REAKSI)
+warna_cairan = "#e2e8f0"  
+tinggi_cairan = "80px"    
 rumus_kimia = "Menunggu Reaksi..."
 status_teks = "Silakan masukkan sampel dan reagen untuk memulai simulasi."
-status_tipe = "info"       # Gaya kotak pesan (info, success, error)
-efek_asap = "opacity: 0;"  # Default tidak berasap
+status_tipe = "info"       
+efek_asap = "opacity: 0;"  
 
 if sampel != "-- Kosong --":
-    warna_cairan = "#e2e8f0"  # Bening transparan awal
+    warna_cairan = "#f8fafc"  # Bening awal
     tinggi_cairan = "140px"
-    rumus_kimia = f"Sampel dimasukkan: {sampel}"
-    status_teks = "Sampel berhasil dituangkan ke dalam gelas kimia. Tambahkan reagen pembantu!"
+    rumus_kimia = f"Sampel: {sampel}"
+    status_teks = "Sampel masuk ke beaker. Masukkan reagen untuk melihat reaksi!"
     
     if reagen != "-- Tanpa Reagen --":
-        tinggi_cairan = "200px"  # Volume bertambah karena dicampur
+        tinggi_cairan = "200px"  
         
-        # Skenario A: Uji Tollens (Aldehida + Tollens)
+        # --- REAKSI 1: ALDEHIDA + TOLLENS (Cermin Perak) ---
         if "Aldehida" in sampel and reagen == "Pereaksi Tollens":
             if suhu >= 70:
-                # Efek Cermin Perak Gradasi Mengkilap
                 warna_cairan = "linear-gradient(135deg, #94a3b8 0%, #f1f5f9 50%, #64748b 100%)"
-                rumus_kimia = "R-CHO + 2[Ag(NH3)2]+ + 3OH- -> R-COO- + 2Ag(s) + 4NH3 + 2H2O"
-                status_teks = "💥 REAKSI POSITIF! Terbentuk lapisan cermin perak (Ag murni) mengkilap pada dinding dalam gelas!"
+                rumus_kimia = "R-CHO + 2[Ag(NH3)2]+ -> R-COO- + 2Ag(s)"
+                status_teks = "💥 POSITIF! Terbentuk cermin perak murni pada dinding gelas!"
                 status_tipe = "success"
                 efek_asap = "opacity: 1;"
             else:
-                warna_cairan = "#cbd5e1"  # Keruh dingin
-                rumus_kimia = "R-CHO + 2[Ag(NH3)2]+"
-                status_teks = "Campuran Tollens masih dingin. Naikkan suhu slider ke >= 70°C untuk mereduksi perak!"
+                warna_cairan = "#cbd5e1"
+                rumus_kimia = "R-CHO + Reagen Tollens"
+                status_teks = "Tollens butuh panas. Naikkan suhu slider ke >= 70°C!"
                 status_tipe = "warning"
                 
-        # Skenario B: Uji Fenol (Fenol + FeCl3)
+        # --- REAKSI 2: GLUKOSA / ALDEHIDA + FEHLING (Merah Bata) ---
+        elif ("Aldehida" in sampel or "Glukosa" in sampel) and reagen == "Pereaksi Fehling":
+            if suhu >= 60:
+                warna_cairan = "#b91c1c"  # Merah bata
+                rumus_kimia = "R-CHO + 2Cu2+ + 5OH- -> R-COO- + Cu2O(s)"
+                status_teks = "💥 POSITIF! Gugus reduksi mereduksi Fehling menjadi endapan Merah Bata (Cu2O)!"
+                status_tipe = "success"
+                efek_asap = "opacity: 1;"
+            else:
+                warna_cairan = "#1d4ed8"  # Biru khas fehling kalau dingin
+                rumus_kimia = "R-CHO + Cu2+ (Fehling)"
+                status_teks = "Warna tetap biru. Panaskan sistem ke >= 60°C untuk memicu endapan!"
+                status_tipe = "warning"
+
+        # --- REAKSI 3: KETON + TOLLENS/FEHLING (Negatif - Pembatas Keton vs Aldehida) ---
+        elif "Keton" in sampel and reagen in ["Pereaksi Tollens", "Pereaksi Fehling"]:
+            warna_cairan = "#fca5a5" if reagen == "Pereaksi Tollens" else "#1d4ed8"
+            rumus_kimia = "R-CO-R + Reagen -> No Reaction"
+            status_teks = "❌ NEGATIF! Keton tidak bisa dioksidasi oleh Tollens maupun Fehling karena tidak punya H-karbonil."
+            status_tipe = "error"
+                
+        # --- REAKSI 4: FENOL + FeCl3 (Ungu Pekat) ---
         elif "Fenol" in sampel and reagen == "Larutan FeCl3":
-            warna_cairan = "#4c1d95"  # Ungu pekat instan
-            rumus_kimia = "6Ar-OH + Fe3+ -> [Fe(OAr)6]3- + 6H+"
-            status_teks = "💥 REAKSI POSITIF! Terbentuk kompleks besi(III) fenolat berwarna ungu pekat secara instan!"
+            warna_cairan = "#4c1d95"  
+            rumus_kimia = "6Ar-OH + Fe3+ -> [Fe(OAr)6]3- (Ungu)"
+            status_teks = "💥 POSITIF! Terbentuk kompleks besi(III) fenolat berwarna ungu tua eksotis!"
             status_tipe = "success"
             if suhu >= 75:
                 efek_asap = "opacity: 1;"
-                
-        # Skenario C: Saponifikasi (Ester + NaOH)
+
+        # --- REAKSI 5: ASAM KARBOKSILAT + NaHCO3 (Gelembung Gas CO2) ---
+        elif "Asam Karboksilat" in sampel and reagen == "Larutan NaHCO3 5%":
+            warna_cairan = "#e2e8f0"
+            rumus_kimia = "R-COOH + NaNaHCO3 -> R-COONa + H2O + CO2(g)"
+            status_teks = "💥 POSITIF! Reaksi asam-basa menghasilkan pelepasan gas CO2 (ditandai busa/gelembung)!"
+            status_tipe = "success"
+            efek_asap = "opacity: 1;"  # Busa diwakili asap
+
+        # --- REAKSI 6: ESTER + NaOH (Saponifikasi Sabun) ---
         elif "Ester" in sampel and reagen == "NaOH + Pemanasan":
             if suhu >= 60:
-                warna_cairan = "#fef08a"  # Kuning keruh emulsi sabun
+                warna_cairan = "#fef08a"  
                 rumus_kimia = "R-COOR' + NaOH -> R-COONa + R'-OH"
-                status_teks = "💥 REAKSI POSITIF! Hidrolisis basa (saponifikasi) berhasil memecah ester membentuk sabun!"
+                status_teks = "💥 POSITIF! Penyabunan (saponifikasi) menghasilkan garam karboksilat (sabun)!"
                 status_tipe = "success"
                 efek_asap = "opacity: 1;"
             else:
-                warna_cairan = "#fef9c3"  # Lapisan minyak terpisah
+                warna_cairan = "#fef9c3"  
                 rumus_kimia = "R-COOR' + NaOH"
-                status_teks = "Reaksi lambat. Naikkan suhu pemanas ke >= 60°C agar reaksi hidrolisis berjalan sempurna!"
+                status_teks = "Campuran minyak-basa belum menyatu. Naikkan suhu ke >= 60°C!"
                 status_tipe = "warning"
                 
-        # Skenario D: Tidak Bereaksi / Salah Reagen
+        # --- JIKA BERPASANGAN TAPI SALAH ---
         else:
-            warna_cairan = "#fca5a5"  # Warna pink kemerahan (tanda eror/negatif)
-            rumus_kimia = "Tidak Terjadi Reaksi (No Reaction)"
-            status_teks = "❌ REAKSI NEGATIF! Reagen pereaksi tidak cocok dengan jenis gugus fungsi sampel ini."
+            warna_cairan = "#fda4af"  
+            rumus_kimia = "No Reaction"
+            status_teks = "❌ NEGATIF! Reagen ini tidak memicu reaksi spesifik apa pun dengan sampel."
             status_tipe = "error"
 
-# 4. MONITOR VISUALISASI JALANNYA GAME (Kanan)
+# 4. MONITOR VISUAL GAME (Kanan)
 with col_visual:
     st.subheader("🖥️ Monitor Beaker Virtual")
     
-    # Box Persamaan Reaksi Atas (Gaya Game HP)
+    # Box Rumus Atas
     st.markdown(
         f'<div class="equation-box">REACTION: {rumus_kimia}</div>', 
         unsafe_allow_html=True
     )
     
-    # HTML KHUSUS: Mengunci kode gambar di dalam Sandbox agar tidak tumpah jadi teks
+    # Grafis Gelas Beaker HTML Terisolasi
     html_gelas = f"""
     <div style="font-family: Arial, sans-serif; text-align: center; background-color: #f8fafc; padding: 10px;">
         <div style="font-size: 35px; height: 45px; transition: all 0.5s; {efek_asap}">💨</div>
@@ -131,10 +174,9 @@ with col_visual:
     </div>
     """
     
-    # PERINTAH SAKTI: Ini yang merender HTML menjadi grafis gambar utuh!
     st.components.v1.html(html_gelas, height=350)
     
-    # Cetak kotak status informasi di paling bawah
+    # Kotak Teks Status Hasil Real-time
     if status_tipe == "success":
         st.success(status_teks)
     elif status_tipe == "warning":

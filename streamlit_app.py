@@ -1,14 +1,14 @@
 import streamlit as st
 import time
 
-# 1. Konfigurasi Halaman (Harus di bagian paling atas)
+# 1. Konfigurasi Halaman (Wajib ditaruh paling atas)
 st.set_page_config(
     page_title="ChemSim - Simulator Tabung", 
     page_icon="🧪", 
     layout="wide"
 )
 
-# Custom CSS untuk mempercantik tampilan slider dan box reaksi
+# Custom CSS untuk merapikan background dan slider
 st.markdown("""
 <style>
     [data-testid="stAppViewContainer"] { background-color: #f8fafc; }
@@ -25,7 +25,7 @@ st.title("🧪 Virtual Beaker Simulator Game")
 st.write("Campurkan zat kimia, atur suhu, dan lihat perubahan visualnya!")
 st.divider()
 
-# 2. PANEL INPUT & KONTROL
+# 2. PANEL INPUT (Kiri)
 col_input, col_visual = st.columns([1, 1.2])
 
 with col_input:
@@ -49,7 +49,7 @@ with col_input:
     st.write("")
     jalankan = st.button("🧪 REAKSIKAN SEKARANG", use_container_width=True)
 
-# 3. LOGIKA AKSI SIMULATOR (Penentu warna & rumus)
+# 3. LOGIKA SIMULATOR
 warna_cairan = "#e2e8f0"  
 tinggi_cairan = "30%"    
 status_reaksi = "Belum ada zat yang dicampur."
@@ -97,13 +97,13 @@ if sampel != "-- Kosong --":
                 status_reaksi = "Belum menyatu. Naikkan suhu untuk hidrolisis!"
                 rumus_kimia = "R-COOR' + NaOH"
         
-        # Kondisi Jika Tidak Cocok
+        # Kondisi Negatif
         else:
             warna_cairan = "#fca5a5"
             status_reaksi = "❌ NEGATIF! Reagen tidak cocok dengan sampel."
             rumus_kimia = "Tidak terjadi reaksi (No Reaction)"
 
-# 4. MONITOR VISUALISASI GELAS KIMIA (KANAN)
+# 4. MONITOR VISUAL GELAS KIMIA (Kanan)
 with col_visual:
     st.subheader("🖥️ Monitor Beaker Virtual")
     
@@ -114,7 +114,7 @@ with col_visual:
         with st.spinner("Mereaksikan zat..."):
             time.sleep(0.5)
             
-    # Grafis Gelas Kimia HTML (Sudah ditambahkan unsafe_allow_html=True di bawah)
+    # Grafis Gelas Kimia HTML (Sudah dikunci agar tidak eror lagi)
     st.markdown(f"""
     <div style="text-align: center; margin-top: 20px; position: relative;">
         <div style="font-size: 40px; height: 50px; margin-bottom: -10px;">
@@ -145,7 +145,7 @@ with col_visual:
     </div>
     """, unsafe_allow_html=True)
     
-    # Kotak pesan status hasil
+    # Kotak pesan status
     st.write("")
     if "💥" in status_reaksi:
         st.success(status_reaksi)

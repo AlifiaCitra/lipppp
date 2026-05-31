@@ -7,7 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS Global: Memperbaiki warna background, teks kontras tinggi, dan panel kontrol lab
+# CSS Global: Mengatur background laboratorium, teks kontras, dan panel kontrol lab
 st.markdown("""
 <style>
     /* Background Laboratorium dengan gradasi gelap estetik */
@@ -49,8 +49,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧪 Virtual Test Tube Simulator Game v5.0")
-st.write("Atur sampel dan reagen, lalu lihat animasi cairan tabung reaksi secara real-time!")
+st.title("🧪 Virtual Test Tube Simulator Game v6.0")
+st.write("Atur sampel dan reagen, naikkan suhu untuk menyalakan api pemanas, dan lihat reaksinya!")
 st.divider()
 
 # 2. PANEL INPUT (Kiri)
@@ -89,17 +89,20 @@ with col_input:
         min_value=25, max_value=100, value=25, step=5
     )
 
-# 3. LOGIKA DETEKSI REAKSI & WARNA
+# 3. LOGIKA DETEKSI REAKSI & PERUBAHAN WARNA CAIRAN
 warna_cairan = "rgba(255, 255, 255, 0.15)"
 tinggi_cairan = "30px"
 rumus_kimia = "Menunggu Reaksi..."
 status_teks = "Silakan tentukan zat organik pada panel kiri."
 status_tipe = "info"
 
-# Kontrol Efek Animasi
+# Kontrol Efek Animasi (Asap, Gelembung, Endapan)
 efek_asap = "0"
 efek_gelembung = "none"
 efek_endapan = "none"
+
+# Logika pemicu api: Menyala jika suhu di atas suhu kamar (25 derajat)
+api_visible = "block" if suhu > 25 else "none"
 
 if sampel != "-- Kosong --":
     warna_cairan = "rgba(241, 245, 249, 0.4)" 
@@ -122,8 +125,9 @@ if sampel != "-- Kosong --":
             else:
                 warna_cairan = "rgba(203, 213, 225, 0.7)"
                 rumus_kimia = "R-CHO + Reagen Tollens"
-                status_teks = "Reaksi lambat. Naikkan suhu slider pemanas ke >= 70°C!"
+                status_teks = "Reaksi lambat. Nyalakan api pemanas lebih besar hingga suhu >= 70°C!"
                 status_tipe = "warning"
+                efek_asap = "0.3"
                 
         # [UJI FEHLING]
         elif ("Aldehida" in sampel or "Glukosa" in sampel) and reagen == "Pereaksi Fehling":
@@ -133,19 +137,22 @@ if sampel != "-- Kosong --":
                 status_teks = "💥 POSITIF! Terbentuk endapan Merah Bata (Cu2O) di dasar bulat tabung!"
                 status_tipe = "success"
                 efek_endapan = "block"
-                efek_asap = "0.7"
+                efek_asap = "0.8"
             else:
                 warna_cairan = "#1d4ed8" 
                 rumus_kimia = "R-CHO + Cu2+ (Fehling)"
-                status_teks = "Larutan tetap biru. Panaskan tabung reaksi hingga >= 60°C!"
+                status_teks = "Larutan tetap biru. Besarkan api pemanas hingga suhu >= 60°C!"
                 status_tipe = "warning"
+                efek_asap = "0.3"
 
         # [PEMBATAS KETON]
         elif "Keton" in sampel and reagen in ["Pereaksi Tollens", "Pereaksi Fehling"]:
             warna_cairan = "rgba(252, 165, 165, 0.6)" if reagen == "Pereaksi Tollens" else "#1d4ed8"
             rumus_kimia = "Keton + Reagen -> No Reaction"
-            status_teks = "❌ NEGATIF! Keton tidak bereaksi dengan Tollens/Fehling karena tidak punya H-karbonil."
+            status_teks = "❌ NEGATIF! Keton tidak bereaksi karena tidak memiliki atom hidrogen pada gugus fungsi karbonil."
             status_tipe = "error"
+            if suhu > 25:
+                efek_asap = "0.4"
                 
         # [UJI FENOL]
         elif "Fenol" in sampel and reagen == "Larutan FeCl3":
@@ -155,6 +162,8 @@ if sampel != "-- Kosong --":
             status_tipe = "success"
             if suhu >= 75:
                 efek_asap = "1"
+            elif suhu > 25:
+                efek_asap = "0.4"
 
         # [UJI ASAM KARBOKSILAT]
         elif "Asam Karboksilat" in sampel and reagen == "Larutan NaHCO3 5%":
@@ -176,79 +185,25 @@ if sampel != "-- Kosong --":
             else:
                 warna_cairan = "rgba(254, 249, 195, 0.8)"
                 rumus_kimia = "R-COOR' + NaOH"
-                status_teks = "Minyak belum menyatu. Naikkan suhu pemanas ke >= 60°C!"
+                status_teks = "Minyak belum menyatu. Pertahankan api pemanas hingga suhu >= 60°C!"
                 status_tipe = "warning"
+                efek_asap = "0.3"
         else:
             warna_cairan = "rgba(225, 29, 72, 0.5)"
             rumus_kimia = "Tidak Terjadi Reaksi"
             status_teks = "❌ NEGATIF! Karakteristik sampel tidak cocok dengan fungsi reagen."
             status_tipe = "error"
+            if suhu > 25:
+                efek_asap = "0.3"
 
-# 4. MONITOR VISUAL TABUNG REAKSI (Kanan)
+# 4. MONITOR VISUAL TABUNG REAKSI + ANIMASI API BUNSEN (Kanan)
 with col_visual:
     st.markdown("### 🖥️ Monitor Tabung Reaksi Virtual")
     
     st.markdown(f'<div class="equation-box">REACTION FORMULA: {rumus_kimia}</div>', unsafe_allow_html=True)
     
-    # Render grafis HTML aman dari error "%" menggunakan teknik penulisan escape persen ganda (%%)
+    # Render grafis HTML interaktif dengan animasi Api Bunsen di bawah rak kayu
     html_game = f"""
-    <div style="text-align: center; font-family: Arial, sans-serif; padding-top: 10px;">
-        <div style="font-size: 38px; height: 45px; margin-bottom: 5px; opacity: {efek_asap}; transition: opacity 0.4s;">💨</div>
+    <div style="text-align: center; font-family: Arial, sans-serif; padding-top: 10px; position: relative;">
         
-        <div style="border: 5px solid #e2e8f0; border-top: none; 
-                    border-radius: 0 0 50px 50px; 
-                    width: 95px; height: 270px; margin: 0 auto; position: relative; 
-                    background: rgba(255, 255, 255, 0.15); box-shadow: 0 0 25px rgba(255,255,255,0.1);
-                    z-index: 2; overflow: hidden;">
-            
-            <div style="position: absolute; top: 0; left: -10px; width: 105px; height: 8px; 
-                        background-color: #e2e8f0; border-radius: 4px; z-index: 5;"></div>
-            
-            <div style="background: {warna_cairan}; width: 100%; height: {tinggi_cairan}; 
-                        position: absolute; bottom: 0; border-radius: 0 0 45px 45px; 
-                        transition: height 0.6s ease, background 0.6s ease; 
-                        display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                
-                <b style="color: #ffffff; font-size: 14px; text-shadow: 1px 1px 4px #000; z-index: 4;">
-                    {f"{suhu}°C" if sampel != "-- Kosong --" else ""}
-                </b>
-
-                <div style="display: {efek_gelembung}; position: absolute; width: 100%; height: 100%; bottom: 0; left: 0;">
-                    <div style="position: absolute; bottom: 10px; left: 20px; width: 8px; height: 8px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: naik 1.5s infinite;"></div>
-                    <div style="position: absolute; bottom: 30px; left: 50px; width: 6px; height: 6px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: naik 1.2s infinite 0.3s;"></div>
-                    <div style="position: absolute; bottom: 50px; left: 35px; width: 10px; height: 10px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: naik 1.8s infinite 0.5s;"></div>
-                </div>
-
-                <div style="display: {efek_endapan}; position: absolute; bottom: 0; left: 0; width: 100%; height: 35px; 
-                            background: #7f1d1d; border-radius: 0 0 45px 45px; border-top: 3px dashed #b91c1c;">
-                </div>
-            </div>
-        </div>
-        
-        <div style="width: 180px; height: 18px; background-color: #b45309; margin: -25px auto 0 auto; border-radius: 6px; position: relative; z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"></div>
-        <div style="width: 140px; height: 45px; border-left: 12px solid #d97706; border-right: 12px solid #d97706; margin: 0 auto; position: relative; z-index: 1;"></div>
-        <div style="width: 200px; height: 15px; background-color: #b45309; margin: 0 auto; border-radius: 4px; position: relative; z-index: 1; box-shadow: 0 4px 10px rgba(0,0,0,0.5);"></div>
-        
-        <style>
-            @keyframes naik {{
-                0%% {{ transform: translateY(0px) scale(0.8); opacity: 0; }}
-                50%% {{ opacity: 0.8; }}
-                100%% {{ transform: translateY(-120px) scale(1.2); opacity: 0; }}
-            }}
-        </style>
-        
-        <p style="margin-top: 15px; font-weight: bold; color: #cbd5e1; font-size: 14px;">Test Tube Stand Model</p>
-    </div>
-    """
-    
-    st.components.v1.html(html_game, height=430)
-    
-    # Kotak Pesan Info Status Output
-    if status_tipe == "success":
-        st.success(status_teks)
-    elif status_tipe == "warning":
-        st.warning(status_teks)
-    elif status_tipe == "error":
-        st.error(status_teks)
-    else:
-        st.info(status_teks)
+        <div style="font-size: 3
